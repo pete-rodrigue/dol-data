@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apprenticeship Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface-2: #efefeb;
+    --border: #ddddd8;
+    --text: #1a1a18;
+    --text-2: #5a5a56;
+    --text-3: #9a9a96;
+    --accent: #1a1a18;
+    --bar: #c8c8c2;
+    --bar-fill: #1a1a18;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+  }
+
+  header h1 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  header p {
+    font-size: 0.8rem;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 480px;
+  }
+
+  .control-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  select {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9a96'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    cursor: pointer;
+  }
+
+  select:focus { outline: none; border-color: var(--accent); }
+
+  #no-data {
+    display: none;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text-3);
+    padding: 3rem 0;
+  }
+
+  #results { display: none; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin: 2rem 0 0.75rem;
+  }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+
+  @media (max-width: 480px) {
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .metric {
+    background: var(--surface);
+    padding: 1.1rem 1.25rem;
+  }
+
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-value {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .metric-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-3);
+    margin-top: 0.35rem;
+  }
+
+  .occ-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); }
+
+  .occ-row {
+    background: var(--surface);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .occ-row:last-child { border-bottom: none; }
+
+  .occ-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--surface-2);
+    z-index: 0;
+    transition: width 0.4s ease;
+  }
+
+  .occ-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .occ-name {
+    font-size: 0.82rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .occ-count {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-2);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-3);
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Apprenticeship Explorer</h1>
+  <p>DOL RAPIDS — Apprenticeship Participant Characteristics &amp; Training Outcomes</p>
+</header>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Fiscal year</label>
+    <select id="sel-year"></select>
+  </div>
+  <div class="control-group">
+    <label>State</label>
+    <select id="sel-state"></select>
+  </div>
+</div>
+
+<div id="no-data">No records found for this selection.</div>
+
+<div id="results">
+
+  <p class="section-label">Overview</p>
+  <div class="grid-3">
+    <div class="metric">
+      <p class="metric-label">Total apprentices</p>
+      <p class="metric-value" id="m-total">—</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">Completion rate</p>
+      <p class="metric-value" id="m-completion">—</p>
+      <p class="metric-sub">CO ÷ (CO + CA)</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">State programs</p>
+      <p class="metric-value" id="m-state-pct">—</p>
+      <p class="metric-sub">vs National</p>
+    </div>
+  </div>
+
+  <p class="section-label">Wages</p>
+  <div class="grid-2">
+    <div class="metric">
+      <p class="metric-label">Median starting wage</p>
+      <p class="metric-value" id="m-start-wage">—</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">Median exit wage</p>
+      <p class="metric-value" id="m-exit-wage">—</p>
+    </div>
+  </div>
+
+  <p class="section-label">Demographics</p>
+  <div class="grid-3">
+    <div class="metric">
+      <p class="metric-label">% female</p>
+      <p class="metric-value" id="m-female">—</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">% veteran</p>
+      <p class="metric-value" id="m-veteran">—</p>
+    </div>
+    <div class="metric">
+      <p class="metric-label">% ages 24 and under</p>
+      <p class="metric-value" id="m-young">—</p>
+    </div>
+  </div>
+
+  <p class="section-label">Top occupations</p>
+  <div class="occ-list" id="m-occupations"></div>
+
+</div>
+
+<footer>
+  Data: DOL RAPIDS Apprenticeship dataset · data.dol.gov/datasets/10264<br>
+  Wages exclude null values. Completion rate uses completed + cancelled records only.
+</footer>
+
+<!-- Load your aggregated data file first, then this script will run -->
+<!-- <script src="apprenticeship_agg.js"></script> -->
+
+<script>
+const yearSel = document.getElementById('sel-year');
+const stateSel = document.getElementById('sel-state');
+
+function pct(num, den) {
+  if (!den) return '—';
+  return (num / den * 100).toFixed(1) + '%';
+}
+
+function fmtWage(v) {
+  if (v == null || isNaN(parseFloat(v))) return '—';
+  return '$' + parseFloat(v).toFixed(2);
+}
+
+function populate() {
+  const data = window._agg || [];
+  const years = [...new Set(data.map(r => r['Fiscal Year']))].sort();
+  const states = [...new Set(data.map(r => r['APPR_STATE']))].filter(Boolean).sort();
+
+  years.forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    yearSel.appendChild(o);
+  });
+  if (years.includes('2019')) yearSel.value = '2019';
+
+  states.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    stateSel.appendChild(o);
+  });
+  if (states.includes('CA')) stateSel.value = 'CA';
+
+  update();
+}
+
+function update() {
+  const data = window._agg || [];
+  const year = yearSel.value;
+  const state = stateSel.value;
+  const row = data.find(r => r['Fiscal Year'] === year && r['APPR_STATE'] === state);
+
+  if (!row) {
+    document.getElementById('no-data').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('no-data').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+
+  document.getElementById('m-total').textContent = (row.total || 0).toLocaleString();
+  document.getElementById('m-completion').textContent = pct(row.completed, row.co_or_ca);
+  document.getElementById('m-state-pct').textContent = pct(row.state_program_count, row.total);
+  document.getElementById('m-start-wage').textContent = fmtWage(row.median_start_wage);
+  document.getElementById('m-exit-wage').textContent = fmtWage(row.median_exit_wage);
+  document.getElementById('m-female').textContent = pct(row.female_count, row.known_gender);
+  document.getElementById('m-veteran').textContent = pct(row.veteran_count, row.known_veteran);
+  document.getElementById('m-young').textContent = pct(row.young_count, row.known_age);
+
+  const occs = row.top_occupations || [];
+  const maxCount = occs.length ? occs[0].count : 1;
+  document.getElementById('m-occupations').innerHTML = occs.map(o => {
+    const name = o.Occupation.length > 60 ? o.Occupation.slice(0, 60) + '…' : o.Occupation;
+    const barPct = (o.count / maxCount * 100).toFixed(1);
+    return `<div class="occ-row">
+      <div class="occ-bar" style="width:${barPct}%"></div>
+      <div class="occ-content">
+        <span class="occ-name">${name}</span>
+        <span class="occ-count">${o.count.toLocaleString()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+yearSel.addEventListener('change', update);
+stateSel.addEventListener('change', update);
+
+if (window._agg) {
+  populate();
+} else {
+  const interval = setInterval(() => {
+    if (window._agg) { clearInterval(interval); populate(); }
+  }, 100);
+}
+</script>
+
+<script src="apprenticeship_agg.js"></script>
+
+</body>
+</html>
