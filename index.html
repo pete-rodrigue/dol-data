@@ -271,6 +271,9 @@
   <p class="section-label">Top occupations</p>
   <div class="occ-list" id="m-occupations"></div>
 
+  <p class="section-label">Top NAICS codes</p>
+  <div class="occ-list" id="m-naics"></div>
+
 </div>
 
 <footer>
@@ -284,6 +287,124 @@
 <script>
 const yearSel = document.getElementById('sel-year');
 const stateSel = document.getElementById('sel-state');
+
+const NAICS = {
+  "11": "Agriculture, Forestry, Fishing and Hunting",
+  "21": "Mining, Quarrying, and Oil and Gas Extraction",
+  "22": "Utilities",
+  "221": "Utilities",
+  "2211": "Electric Power Generation, Transmission and Distribution",
+  "2212": "Natural Gas Distribution",
+  "22111": "Electric Power Generation",
+  "22112": "Electric Power Transmission, Control, and Distribution",
+  "221111": "Hydroelectric Power Generation",
+  "221112": "Fossil Fuel Electric Power Generation",
+  "221113": "Nuclear Electric Power Generation",
+  "221114": "Solar Electric Power Generation",
+  "221115": "Wind Electric Power Generation",
+  "221116": "Geothermal Electric Power Generation",
+  "221117": "Biomass Electric Power Generation",
+  "221118": "Other Electric Power Generation",
+  "221121": "Electric Bulk Power Transmission and Control",
+  "221122": "Electric Power Distribution",
+  "221210": "Natural Gas Distribution",
+  "221310": "Water Supply and Irrigation Systems",
+  "221320": "Sewage Treatment Facilities",
+  "221330": "Steam and Air-Conditioning Supply",
+  "23": "Construction",
+  "236": "Construction of Buildings",
+  "2361": "Residential Building Construction",
+  "2362": "Nonresidential Building Construction",
+  "236115": "New Single-Family Housing Construction",
+  "236116": "New Multifamily Housing Construction",
+  "236117": "New Housing Operative Builders",
+  "236118": "Residential Remodelers",
+  "236210": "Industrial Building Construction",
+  "236220": "Commercial and Institutional Building Construction",
+  "237": "Heavy and Civil Engineering Construction",
+  "2371": "Utility System Construction",
+  "2372": "Land Subdivision",
+  "2373": "Highway, Street, and Bridge Construction",
+  "2379": "Other Heavy and Civil Engineering Construction",
+  "237110": "Water and Sewer Line and Related Structures Construction",
+  "237120": "Oil and Gas Pipeline and Related Structures Construction",
+  "237130": "Power and Communication Line and Related Structures Construction",
+  "237210": "Land Subdivision",
+  "237310": "Highway, Street, and Bridge Construction",
+  "237990": "Other Heavy and Civil Engineering Construction",
+  "238": "Specialty Trade Contractors",
+  "2381": "Foundation, Structure, and Building Exterior Contractors",
+  "2382": "Building Equipment Contractors",
+  "2383": "Building Finishing Contractors",
+  "2389": "Other Specialty Trade Contractors",
+  "238110": "Poured Concrete Foundation and Structure Contractors",
+  "238120": "Structural Steel and Precast Concrete Contractors",
+  "238130": "Framing Contractors",
+  "238140": "Masonry Contractors",
+  "238150": "Glass and Glazing Contractors",
+  "238160": "Roofing Contractors",
+  "238170": "Siding Contractors",
+  "238190": "Other Foundation, Structure, and Building Exterior Contractors",
+  "238210": "Electrical Contractors and Other Wiring Installation Contractors",
+  "238220": "Plumbing, Heating, and Air-Conditioning Contractors",
+  "238290": "Other Building Equipment Contractors",
+  "238310": "Drywall and Insulation Contractors",
+  "238320": "Painting and Wall Covering Contractors",
+  "238330": "Flooring Contractors",
+  "238340": "Tile and Terrazzo Contractors",
+  "238350": "Finish Carpentry Contractors",
+  "238390": "Other Building Finishing Contractors",
+  "238910": "Site Preparation Contractors",
+  "238990": "All Other Specialty Trade Contractors",
+  "31": "Manufacturing",
+  "32": "Manufacturing",
+  "33": "Manufacturing",
+  "42": "Wholesale Trade",
+  "44": "Retail Trade",
+  "45": "Retail Trade",
+  "48": "Transportation and Warehousing",
+  "49": "Transportation and Warehousing",
+  "51": "Information",
+  "52": "Finance and Insurance",
+  "53": "Real Estate and Rental and Leasing",
+  "54": "Professional, Scientific, and Technical Services",
+  "55": "Management of Companies and Enterprises",
+  "56": "Administrative and Support and Waste Management and Remediation Services",
+  "61": "Educational Services",
+  "611": "Educational Services",
+  "6115": "Technical and Trade Schools",
+  "61151": "Technical and Trade Schools",
+  "611513": "Apprenticeship Training",
+  "611519": "Other Technical and Trade Schools",
+  "62": "Health Care and Social Assistance",
+  "71": "Arts, Entertainment, and Recreation",
+  "72": "Accommodation and Food Services",
+  "81": "Other Services (except Public Administration)",
+  "92": "Public Administration",
+  "921": "Executive, Legislative, and Other General Government Support",
+  "922": "Justice, Public Order, and Safety Activities",
+  "9221": "Justice, Public Order, and Safety Activities",
+  "92211": "Courts",
+  "92212": "Police Protection",
+  "92213": "Legal Counsel and Prosecution",
+  "92214": "Correctional Institutions",
+  "92215": "Parole Offices and Probation Offices",
+  "92216": "Fire Protection",
+  "92219": "Other Justice, Public Order, and Safety Activities",
+  "922140": "Correctional Institutions",
+  "928": "National Security and International Affairs",
+  "9281": "National Security and International Affairs",
+  "928110": "National Security",
+  "928120": "International Affairs",
+  "332322": "Sheet Metal Work Manufacturing",
+  "484121": "General Freight Trucking, Long-Distance, Truckload",
+  "922110": "Courts",
+  "812320": "Drycleaning and Laundry Services",
+  "813910": "Business Associations",
+  "336611": "Ship Building and Repairing",
+  "333415": "Air-Conditioning and Warm Air Heating Equipment and Commercial and Industrial Refrigeration Equipment Manufacturing",
+  "624410": "Child Day Care Services",
+};
 
 function pct(num, den) {
   if (!den) return '—';
@@ -354,6 +475,21 @@ function update() {
       </div>
     </div>`;
   }).join('');
+
+  const naics = row.top_naics || [];
+  const maxNaics = naics.length ? naics[0].count : 1;
+  document.getElementById('m-naics').innerHTML = naics.map(n => {
+    const barPct = (n.count / maxNaics * 100).toFixed(1);
+    const label = NAICS[String(n.NAICS_CD)] || 'NAICS ' + n.NAICS_CD;
+    const code = String(n.NAICS_CD);
+    return `<div class="occ-row">
+      <div class="occ-bar" style="width:${barPct}%"></div>
+      <div class="occ-content">
+        <span class="occ-name">${label} <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-3);">${code}</span></span>
+        <span class="occ-count">${n.count.toLocaleString()}</span>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 yearSel.addEventListener('change', update);
@@ -367,8 +503,9 @@ if (window._agg) {
   }, 100);
 }
 </script>
-
 <script src="apprenticeship_agg.js"></script>
-
 </body>
 </html>
+
+
+
