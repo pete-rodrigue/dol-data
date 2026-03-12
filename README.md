@@ -28,7 +28,8 @@ The data can be obtained two ways:
 
 | File | Description |
 |------|-------------|
-| `index.ipynb` | Main analysis notebook (see below for details) |
+| `analysis.ipynb` | Main analysis notebook (see below for details) |
+| `index.html` | Webpage to view & filter data |
 | `requirements.txt` | Python dependencies |
 
 ## Setup
